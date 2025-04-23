@@ -209,9 +209,12 @@ return {
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         clangd = {},
+        cmake = {
+          filetypes = { 'cmake', 'CMakeLists.txt' }
+        },
         -- gopls = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -253,12 +256,23 @@ return {
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'clangd',
+        'cmake-language-server',
+        'rust-analyzer',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+      -- For mason-lspconfig (LSP servers only)
+      local lsp_servers = {
+        'clangd',
+        'cmake',  -- Note: this is the lspconfig name, not 'cmake-language-server'
+        'rust_analyzer',  -- Note underscore instead of hyphen
+        'lua_ls',  -- Note underscore instead of hyphen
+      }
+
       require('mason-lspconfig').setup {
-        ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-        automatic_installation = false,
+        ensure_installed = lsp_servers, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+        automatic_installation = true,
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}

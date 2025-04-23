@@ -2,24 +2,57 @@
 -- https://github.com/nvim-neo-tree/neo-tree.nvim
 
 return {
-  'nvim-neo-tree/neo-tree.nvim',
-  version = '*',
-  dependencies = {
-    'nvim-lua/plenary.nvim',
-    'nvim-tree/nvim-web-devicons', -- not strictly required, but recommended
-    'MunifTanjim/nui.nvim',
-  },
-  cmd = 'Neotree',
-  keys = {
-    { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
-  },
-  opts = {
-    filesystem = {
-      window = {
-        mappings = {
-          ['\\'] = 'close_window',
-        },
-      },
+    'nvim-neo-tree/neo-tree.nvim',
+    version = '*',
+    dependencies = {
+        'nvim-lua/plenary.nvim',
+        'nvim-tree/nvim-web-devicons',
+        'MunifTanjim/nui.nvim',
     },
-  },
+    cmd = 'Neotree',
+    keys = {
+        { '\\', ':Neotree reveal toggle float<CR>', desc = 'NeoTree reveal', silent = true },
+        { '<Leader>\\', ':Neotree left reveal toggle<CR>', desc = 'NeoTree (sidebar)', silent = true },
+    },
+    opts = {
+        close_if_last_window = true,
+        popup_border_style = "rounded",
+        enable_modified_markers = true, -- Show file modification status
+        default_component_configs = {
+            indent = { with_expanders = true },
+        },
+        window = {
+            position = "float",
+            width = 60,
+            height = 30,
+            mappings = {
+                ['\\'] = 'close_window',
+            },
+        },
+        filesystem = {
+            window = {
+                position = 'left',
+                width = function()
+                    return math.min(math.floor(vim.o.columns * 0.3), 50)
+                end,
+            },
+            filtered_items = {
+                visible = true,
+                hide_dotfiles = false,
+                hide_gitignored = false,
+            },
+            follow_current_file = {
+                enabled = true,
+            },
+        },
+        event_handlers = {
+            {
+                event = "neo_tree_buffer_enter",
+
+                handler = function()
+                    vim.opt_local.relativenumber = true
+                end,
+            }
+        }
+    },
 }

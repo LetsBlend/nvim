@@ -5,7 +5,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -24,6 +24,9 @@ vim.opt.mouse = 'a'
 -- Don't show the mode, since it's already in the status line
 vim.opt.showmode = false
 
+vim.o.autoindent = true
+vim.o.smartindent = true
+
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -33,7 +36,7 @@ vim.schedule(function()
 end)
 
 -- Enable break indent
-vim.opt.breakindent = true
+vim.opt.breakindent = false
 
 -- Save undo history
 vim.opt.undofile = true
@@ -82,6 +85,14 @@ vim.opt.expandtab = true
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()
+vim.keymap.set('n', '<C-d>', '<C-d>zz')
+vim.keymap.set('n', '<C-u>', '<C-u>zz')
+
+-- For indentation
+vim.keymap.set('n', '<leader>u', 'Util')
+vim.keymap.set('n', '<leader>ui', 'gg=G<C-o>', { desc = 'Indent file' })
+vim.keymap.set('i', '<S-Tab>', '<C-d>', { desc = 'Outdent line' })
+vim.keymap.set('n', '<leader>uw', '<cmd>set shiftwidth=4<CR>', { desc = 'Set shiftwidth to default' })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -133,6 +144,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -144,6 +156,22 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   end
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
+
+
+
+
+
+
+
+
+-- [[ Configure and install build configurations]]
+-- Edit this file to add support for more languages
+require('langs.init').setup()
+
+
+
+
+
 
 -- [[ Configure and install plugins ]]
 --
@@ -165,8 +193,12 @@ require('lazy').setup({
   -- keys can be used to configure plugin behavior/loading/etc.
   --
 
-  -- NOTE Custom added plugins
+  -- Vim-Games Plugin
   'ThePrimeagen/vim-be-good',
+
+  -- Icons Plugin
+  'nvim-tree/nvim-web-devicons',
+
 
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
@@ -174,138 +206,168 @@ require('lazy').setup({
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
-  --        'lewis6991/gitsigns.nvim',
-  --        config = function()
-  --            require('gitsigns').setup({
-  --                -- Your gitsigns configuration here
-  --            })
-  --        end,
-  --    }
-  --
-  -- Here is a more advanced example where we pass configuration
-  -- options to `gitsigns.nvim`.
-  --
-  -- See `:help gitsigns` to understand what the configuration keys do
-  { -- Adds git related signs to the gutter, as well as utilities for managing changes
-    'lewis6991/gitsigns.nvim',
-    opts = {
-      signs = {
-        add = { text = '+' },
-        change = { text = '~' },
-        delete = { text = '_' },
-        topdelete = { text = '‾' },
-        changedelete = { text = '~' },
-      },
-    },
-  },
+    --        'lewis6991/gitsigns.nvim',
+    --        config = function()
+      --            require('gitsigns').setup({
+        --                -- Your gitsigns configuration here
+        --            })
+        --        end,
+        --    }
+        --
+        -- Here is a more advanced example where we pass configuration
+        -- options to `gitsigns.nvim`.
+        --
+        -- See `:help gitsigns` to understand what the configuration keys do
+        { -- Adds git related signs to the gutter, as well as utilities for managing changes
+          'lewis6991/gitsigns.nvim',
+          opts = {
+            signs = {
+              add = { text = '+' },
+              change = { text = '~' },
+              delete = { text = '_' },
+              topdelete = { text = '‾' },
+              changedelete = { text = '~' },
+            },
+          },
+        },
 
-  -- WhichKey Plugin
-  require 'plugins.whichkey',
+        -- Session manager Plugin
+        {
+          "folke/persistence.nvim",
+          event = "BufReadPre", -- lazy-load on file open
+          config = function()
+            require("persistence").setup()
+          end,
+        },
 
-  -- Telescope Fuzzy Finder Plugin
-  require 'plugins.telescope',
+        -- Alpha Nvim Plugin
+        require 'plugins.alphanvim',
 
-  -- LSP Plugins
-  require 'plugins.lsp',
+        -- WhichKey Plugin
+        require 'plugins.whichkey',
 
-  -- Autoforma Plugins
-  require 'plugins.autoformat',
+        -- Telescope Fuzzy Finder Plugin
+        require 'plugins.telescope',
 
-  -- Autocompletion Plugins
-  require 'plugins.autocomplete',
+        -- Projects Plugin
+        {
+          "ahmedkhalf/project.nvim",
+          config = function()
+            require("project_nvim").setup({
+              -- these are the defaults, customize if needed
+              detection_methods = { "lsp", "pattern" },
+              patterns = { ".git", "Makefile", "package.json" },
+            })
+          end,
+        },
 
-  -- Autopairs Plugin
-  require 'plugins.autopairs',
+        -- LSP Plugins
+        require 'plugins.lsp',
 
-  -- Tree-Hirarchy plugin
-  require 'plugins.neo-tree',
+        -- Autoforma Plugins
+        -- require 'plugins.autoformat',
 
-  -- Highlighting and Colorscemes
-  require 'plugins.highlighter',
+        -- Autocompletion Plugins
+        require 'plugins.autocomplete',
 
-  { -- Collection of various small independent plugins/modules
-    'echasnovski/mini.nvim',
-    config = function()
-      -- Better Around/Inside textobjects
-      --
-      -- Examples:
-      --  - va)  - [V]isually select [A]round [)]paren
-      --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
-      --  - ci'  - [C]hange [I]nside [']quote
-      require('mini.ai').setup { n_lines = 500 }
+        -- Autopairs Plugin
+        require 'plugins.autopairs',
 
-      -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      --
-      -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-      -- - sd'   - [S]urround [D]elete [']quotes
-      -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+        -- Tree-Hirarchy plugin
+        require 'plugins.neo-tree',
 
-      -- Simple and easy statusline.
-      --  You could remove this setup call if you don't like it,
-      --  and try some other statusline plugin
-      local statusline = require 'mini.statusline'
-      -- set use_icons to true if you have a Nerd Font
-      statusline.setup { use_icons = vim.g.have_nerd_font }
+        -- Highlighting and Colorscemes
+        require 'plugins.highlighter',
 
-      -- You can configure sections in the statusline by overriding their
-      -- default behavior. For example, here we set the section for
-      -- cursor location to LINE:COLUMN
-      ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_location = function()
-        return '%2l:%-2v'
-      end
 
-      -- ... and there is more!
-      --  Check out: https://github.com/echasnovski/mini.nvim
-    end,
-  },
 
-  -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
+        { -- Collection of various small independent plugins/modules
+          'echasnovski/mini.nvim',
+          config = function()
+            -- Better Around/Inside textobjects
+            --
+            -- Examples:
+            --  - va)  - [V]isually select [A]round [)]paren
+            --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
+            --  - ci'  - [C]hange [I]nside [']quote
+            require('mini.ai').setup { n_lines = 500 }
 
-  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
-  --  Here are some example plugins that I've included in the Kickstart repository.
-  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
-  -- require 'plugins.debug',
-  -- require 'plugins.indent_line',
-  -- require 'plugins.lint',
-  -- require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
+            -- Add/delete/replace surroundings (brackets, quotes, etc.)
+            --
+            -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
+            -- - sd'   - [S]urround [D]elete [']quotes
+            -- - sr)'  - [S]urround [R]eplace [)] [']
+            require('mini.surround').setup()
 
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    This is the easiest way to modularize your config.
-  --
-  --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
-  --
-  -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
-  -- Or use telescope!
-  -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
-  -- you can continue same window with `<space>sr` which resumes last telescope search
-}, {
-  ui = {
-    -- If you are using a Nerd Font: set icons to an empty table which will use the
-    -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-    icons = vim.g.have_nerd_font and {} or {
-      cmd = '⌘',
-      config = '🛠',
-      event = '📅',
-      ft = '📂',
-      init = '⚙',
-      keys = '🗝',
-      plugin = '🔌',
-      runtime = '💻',
-      require = '🌙',
-      source = '📄',
-      start = '🚀',
-      task = '📌',
-      lazy = '💤 ',
-    },
-  },
-})
+            -- Simple and easy statusline.
+            --  You could remove this setup call if you don't like it,
+            --  and try some other statusline plugin
+            local statusline = require 'mini.statusline'
+            -- set use_icons to true if you have a Nerd Font
+            statusline.setup { use_icons = vim.g.have_nerd_font }
 
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
+            -- You can configure sections in the statusline by overriding their
+            -- default behavior. For example, here we set the section for
+            -- cursor location to LINE:COLUMN
+            ---@diagnostic disable-next-line: duplicate-set-field
+            statusline.section_location = function()
+              return '%2l:%-2v'
+            end
+
+            -- ... and there is more!
+            --  Check out: https://github.com/echasnovski/mini.nvim
+          end,
+        },
+
+        -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
+        -- init.lua. If you want these files, they are in the repository, so you can just download them and
+        -- place them in the correct locations.
+
+        -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
+        --
+        --  Here are some example plugins that I've included in the Kickstart repository.
+        --  Uncomment any of the lines below to enable them (you will need to restart nvim).
+        --
+        -- tried to setup debugging for windows applications in cplusplus but failed (sadge)
+        -- you can expect quite a bit of work future me
+        -- require 'plugins.debug',
+        -- require 'plugins.indent_line',
+        -- require 'plugins.lint',
+        require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
+
+        -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
+        --    This is the easiest way to modularize your config.
+        --
+        --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
+        -- { import = 'custom.plugins' },
+        --
+        -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
+        -- Or use telescope!
+        -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
+        -- you can continue same window with `<space>sr` which resumes last telescope search
+      }, {
+        ui = {
+          -- If you are using a Nerd Font: set icons to an empty table which will use the
+          -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
+          icons = vim.g.have_nerd_font and {} or {
+            cmd = '⌘',
+            config = '🛠',
+            event = '📅',
+            ft = '📂',
+            init = '⚙',
+            keys = '🗝',
+            plugin = '🔌',
+            runtime = '💻',
+            require = '🌙',
+            source = '📄',
+            start = '🚀',
+            task = '📌',
+            lazy = '💤 ',
+          },
+        },
+      })
+
+      require('alpha').start()
+
+      -- The line beneath this is called `modeline`. See `:help modeline`
+      -- vim: ts=2 sts=2 sw=2 et

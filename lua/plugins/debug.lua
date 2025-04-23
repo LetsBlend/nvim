@@ -21,8 +21,9 @@ return {
     'williamboman/mason.nvim',
     'jay-babu/mason-nvim-dap.nvim',
 
-    -- Add your own debuggers here
+    --Add your own debuggers here
     'leoluz/nvim-dap-go',
+
   },
   keys = {
     -- Basic debugging keymaps, feel free to change to your liking!
@@ -94,7 +95,9 @@ return {
       -- online, please don't ask me how to install them :)
       ensure_installed = {
         -- Update this to ensure that you have the debuggers for the langs you want
-        'delve',
+        'delve',     -- Go debugger
+        -- 'codelldb',  -- Linux debugging (LLDB)
+        'cpptools',
       },
     }
 
@@ -121,28 +124,84 @@ return {
     }
 
     -- Change breakpoint icons
-    -- vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
-    -- vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
-    -- local breakpoint_icons = vim.g.have_nerd_font
-    --     and { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '', LogPoint = '', Stopped = '' }
-    --   or { Breakpoint = '●', BreakpointCondition = '⊜', BreakpointRejected = '⊘', LogPoint = '◆', Stopped = '⭔' }
-    -- for type, icon in pairs(breakpoint_icons) do
-    --   local tp = 'Dap' .. type
-    --   local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
-    --   vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
-    -- end
+    vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
+    vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
+    local breakpoint_icons = vim.g.have_nerd_font
+    and { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '', LogPoint = '', Stopped = '' }
+    or { Breakpoint = '●', BreakpointCondition = '⊜', BreakpointRejected = '⊘', LogPoint = '◆', Stopped = '⭔' }
+    for type, icon in pairs(breakpoint_icons) do
+      local tp = 'Dap' .. type
+      local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
+      vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
+    end
 
-    dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-    dap.listeners.before.event_exited['dapui_config'] = dapui.close
-
-    -- Install golang specific config
-    require('dap-go').setup {
-      delve = {
-        -- On Windows delve must be run attached or it crashes.
-        -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
-        detached = vim.fn.has 'win32' == 0,
-      },
-    }
-  end,
+dap.adapters.cppdbg = {
+  id = 'cppdbg',
+  type = 'executable',
+  command = 'cmd.exe',
+  args = {
+    '/c',
+    'C:\\Users\\Let\'sBlend\\.vscode\\extensions\\ms-vscode.cpptools-1.24.5-win32-x64\\debugAdapters\\bin\\OpenDebugAD7.exe',
+  },
 }
+
+dap.configurations.cpp = {
+  {
+    name = "Attach to gdbserver",
+    type = "cppdbg",
+    request = "launch",
+    program = "C:\\dev\\CPlusPlus\\CircleLoopAlgorithm\\build\\Windows\\Debug\\CircleLoopAlgorithm.exe",
+    cwd = "C:\\dev\\CPlusPlus\\CircleLoopAlgorithm",
+    miDebuggerServerAddress = "192.168.0.157:50000",
+    miDebuggerPath = "C:\\MinGW\\bin\\gdb.exe",
+    stopAtEntry = false,
+    setupCommands = {
+      {
+        text = "-enable-pretty-printing",
+        description =  "enable pretty printing",
+        ignoreFailures = false
+      }
+    },
+    sourceMap = {
+      ["C:/dev/CPlusPlus/CircleLoopAlgorithm"] = "/mnt/c/dev/CPlusPlus/CircleLoopAlgorithm"
+    },
+  }
+}
+
+    -- dap.adapters.cpp_windows = {
+      --   type = 'server',
+      --   port = 4711,
+      --   host = '127.0.0.1',  -- ← Key change for WSL2
+      --   -- executable = {
+        --   --   command = 'C:\\Users\\Let\'sBlend\\.vscode\\extensions\\vadimcn.vscode-lldb-1.11.4\\adapter\\codelldb.exe',
+        --   --   args = { '--port', '${port}' },
+        --   -- }
+        -- }
+        --
+        -- dap.configurations.cpp = {
+          --   {
+            --     name = 'Debug Windows EXE',
+            --     type = 'codelldb',
+            --     request = 'launch',
+            --     program = '/mnt/c/dev/CPlusPlus/CircleLoopAlgorithm/build/Windows/Debug/CircleLoopAlgorithm.exe',
+            --     cwd = '${workspaceFolder}',
+            --     stopOnEntry = true,
+            --   },
+            -- }
+
+            dap.configurations.c = dap.configurations.cpp
+
+            dap.listeners.after.event_initialized['dapui_config'] = dapui.open
+            dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+            dap.listeners.before.event_exited['dapui_config'] = dapui.close
+
+            -- Install golang specific config
+            require('dap-go').setup {
+              delve = {
+                -- On Windows delve must be run attached or it crashes.
+                -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
+                detached = vim.fn.has 'win32' == 0,
+              },
+            }
+          end,
+        }
