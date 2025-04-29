@@ -22,6 +22,13 @@ return {
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
+      -- Java specific plugins
+      'nvim-java/nvim-java',
+      'nvim-java/lua-async-await',
+      'nvim-java/nvim-java-refactor',
+      'nvim-java/nvim-java-core',
+      'nvim-java/nvim-java-test',
+
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
 
@@ -109,6 +116,10 @@ return {
           --  the definition of its *type*, not where it was *defined*.
           map('gt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
+          -- local hover_docs = require('plugins.hover_docs')
+          --
+          -- map('K', hover_docs.hover_to_glow(), '[K]ustom Hover')
+
           -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
           ---@param client vim.lsp.Client
           ---@param method vim.lsp.protocol.Method
@@ -150,6 +161,7 @@ return {
               end,
             })
           end
+
 
           -- The following code creates a keymap to toggle inlay hints in your
           -- code, if the language server you are using supports them
@@ -207,14 +219,23 @@ return {
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+
       local servers = {
-        clangd = {},
+        clangd = {
+          root_dir = function(fname)
+            return require('lspconfig.util').root_pattern('compile_commands.json', 'compile_flags.txt', '.git', 'src')(fname)
+          end,
+        },
         cmake = {
           filetypes = { 'cmake', 'CMakeLists.txt' }
         },
         -- gopls = {},
         -- pyright = {},
-        rust_analyzer = {},
+        rust_analyzer = {
+          root_dir = function(fname)
+            return require('lspconfig.util').root_pattern('Cargo.toml', 'rust-project.json', '.git', 'src')(fname)
+          end,
+        },
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -259,6 +280,7 @@ return {
         'clangd',
         'cmake-language-server',
         'rust-analyzer',
+        'jdtls',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -268,6 +290,7 @@ return {
         'cmake',  -- Note: this is the lspconfig name, not 'cmake-language-server'
         'rust_analyzer',  -- Note underscore instead of hyphen
         'lua_ls',  -- Note underscore instead of hyphen
+        'jdtls',
       }
 
       require('mason-lspconfig').setup {
@@ -282,8 +305,14 @@ return {
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
+          jdtls = function()
+            require('java').setup({})
+            require('lspconfig').jdtls.setup({})
+          end,
         },
       }
     end,
   },
+
 }
+

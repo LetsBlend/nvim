@@ -22,8 +22,10 @@ return {
 
       -- Set menu
       dashboard.section.buttons.val = {
-        dashboard.button('f', '  > Find projects', ':Telescope projects<CR>'),
-        dashboard.button('n', '  > New Project', ':lua require("langs.project_creator").new_project()<CR>'),
+        dashboard.button('f', '  > Find projects', function()
+          require('project_manager').switch_projects()
+        end),
+        dashboard.button('n', '  > New Project', ':lua require("project_creator").new_project()<CR>'),
         dashboard.button('r', '  > Recent files', ':Telescope oldfiles<CR>'),
         dashboard.button('s', '  > Restore session', ':lua require("persistence").load( {last = true} )<CR>'),
         dashboard.button('c', '  > Config', ':e $MYVIMRC<CR>'),

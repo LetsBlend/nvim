@@ -1,3 +1,16 @@
+-- FIXME: 
+-- Make find projects option sort projects into languages
+-- Make a undo hirarchy
+-- Make functions/comments/etc. collapsable
+-- Fix building c++ for Linux
+-- 
+-- TODO: 
+-- Add support for a C++ Windows debugger
+-- Add Autoformatting for c++
+-- Make rename also work when renaming function definitions in c++
+-- Make changes to the decleration or definition reflect on both
+-- Make rust work for compiling to windows (probably need to install some dependency or smth)
+--
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -29,7 +42,7 @@ vim.o.smartindent = true
 
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
---  Remove this option if you want your OS clipboard to remain independent.
+--  Remove this option if you want your OS clip oard to remain independent.
 --  See `:help 'clipboard'`
 vim.schedule(function()
   vim.opt.clipboard = 'unnamedplus'
@@ -83,16 +96,28 @@ vim.opt.shiftwidth = 4
 vim.opt.softtabstop = 4
 vim.opt.expandtab = true
 
+-- Collapsable code sections
+vim.o.foldmethod = "syntax"    -- or "indent", "manual", "expr"
+vim.o.foldenable = true
+vim.o.foldlevel = 99
+vim.o.foldnestmax = 10
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
 
 -- For indentation
-vim.keymap.set('n', '<leader>u', 'Util')
-vim.keymap.set('n', '<leader>ui', 'gg=G<C-o>', { desc = 'Indent file' })
+vim.keymap.set('n', '<leader>u', '[U]til')
+vim.keymap.set('n', '<leader>i', 'gg=G<C-o>', { desc = 'Indent file' })
 vim.keymap.set('i', '<S-Tab>', '<C-d>', { desc = 'Outdent line' })
 vim.keymap.set('n', '<leader>uw', '<cmd>set shiftwidth=4<CR>', { desc = 'Set shiftwidth to default' })
+
+-- Others
+vim.keymap.set('n', '<leader>ur', ':ProjectRoot<CR>', { desc = 'Set Project Root' })
+
+
+vim.keymap.set("n", "K", require("plugins.hover_docs").hover_to_glow, { desc = "LSP Hover with Glow" })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -240,11 +265,15 @@ require('lazy').setup({
           end,
         },
 
+
         -- Alpha Nvim Plugin
         require 'plugins.alphanvim',
 
         -- WhichKey Plugin
         require 'plugins.whichkey',
+
+        -- Terminal Plugin
+        require 'plugins.toggleterm',
 
         -- Telescope Fuzzy Finder Plugin
         require 'plugins.telescope',
@@ -256,13 +285,54 @@ require('lazy').setup({
             require("project_nvim").setup({
               -- these are the defaults, customize if needed
               detection_methods = { "lsp", "pattern" },
-              patterns = { ".git", "Makefile", "package.json" },
+              patterns = {
+                ".git",                 -- Git repos
+                "Makefile",             -- C / C++ / general builds
+                "CMakeLists.txt",       -- C / C++ with CMake
+                "package.json",         -- Node.js / npm
+                "requirements.txt",     -- Python (pip)
+                "pyproject.toml",       -- Python (modern packaging)
+                "setup.py",             -- Python (legacy packaging)
+                "Pipfile",              -- Python (pipenv)
+                "poetry.lock",          -- Python (poetry)
+                "Cargo.toml",           -- Rust
+                "go.mod",               -- Go
+                "go.sum",               -- Go
+                "composer.json",        -- PHP (Composer)
+                "Gemfile",              -- Ruby (Bundler)
+                "mix.exs",              -- Elixir (Mix)
+                "build.gradle",         -- Java / Kotlin (Gradle)
+                "pom.xml",              -- Java (Maven)
+                ".project",             -- Custom fallback marker
+                "tsconfig.json",        -- TypeScript
+                "deno.json",            -- Deno
+                "elm.json",             -- Elm
+                "shard.yml",            -- Crystal
+                "Justfile",             -- just task runner
+                ".env",                 -- Often present in projects
+                ".project",            -- Custom marker 
+              },
             })
           end,
         },
 
         -- LSP Plugins
         require 'plugins.lsp',
+
+        -- LSP UI
+        {
+          "ellisonleao/glow.nvim", 
+          config = true, 
+          cmd = "Glow",
+          opts = {
+            style = 'dark',   -- Try other styles like 'dark', 'light', or 'solarized'
+            border = 'rounded',  -- Options: 'single', 'double', 'rounded', 'solid'
+            width = 100,  -- Set the width of the window
+            height = 30,  -- Set the height of the window
+            max_width = 120,  -- Set maximum width
+            max_height = 40,  -- Set maximum height
+          }
+        },
 
         -- Autoforma Plugins
         -- require 'plugins.autoformat',
@@ -279,7 +349,48 @@ require('lazy').setup({
         -- Highlighting and Colorscemes
         require 'plugins.highlighter',
 
+        {
+          "kevinhwang91/nvim-ufo",
+          dependencies = { "kevinhwang91/promise-async" },
+          config = function()
+            -- Global fold settings
+            vim.o.foldcolumn = "1" -- Show fold column
+            vim.o.foldlevel = 99
+            vim.o.foldlevelstart = 99
+            vim.o.foldenable = true
 
+            -- Folding providers: Treesitter + fallback to indent
+            require("ufo").setup({
+              provider_selector = function(_, filetype, _)
+                return { "treesitter", "indent" }
+              end,
+            })
+          end,
+        },
+
+        {
+          "nvim-treesitter/nvim-treesitter",
+          build = ":TSUpdate",
+          config = function()
+            require("nvim-treesitter.configs").setup({
+              ensure_installed = {
+                "lua", "python", "javascript", "typescript", "json", "html", "css", "cpp", "c", "java", "rust", -- add more as needed
+              },
+              highlight = {
+                enable = true,
+              },
+              indent = {
+                enable = true,
+              },
+            })
+
+            -- Set folding options
+            vim.opt.foldmethod = "expr"
+            vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+            vim.opt.foldenable = true      -- Enable folding by default
+            vim.opt.foldlevel = 99         -- Open all folds by default
+          end,
+        },
 
         { -- Collection of various small independent plugins/modules
           'echasnovski/mini.nvim',
@@ -330,7 +441,7 @@ require('lazy').setup({
         --
         -- tried to setup debugging for windows applications in cplusplus but failed (sadge)
         -- you can expect quite a bit of work future me
-        -- require 'plugins.debug',
+        require 'plugins.debug',
         -- require 'plugins.indent_line',
         -- require 'plugins.lint',
         require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
@@ -371,3 +482,10 @@ require('lazy').setup({
 
       -- The line beneath this is called `modeline`. See `:help modeline`
       -- vim: ts=2 sts=2 sw=2 et
+      ---- Add to your noice.nvim config or init.lua
+      vim.api.nvim_set_hl(0, 'MarkdownH1', { bold = true, fg = '#ff9e64' })
+      vim.api.nvim_set_hl(0, 'MarkdownH2', { bold = true, fg = '#7aa2f7' })
+      vim.api.nvim_set_hl(0, 'MarkdownCode', { bg = '#1a1a2e' })
+      vim.api.nvim_set_hl(0, 'MarkdownLinkText', { underline = true, fg = '#7dcfff' })
+      vim.api.nvim_set_hl(0, 'MarkdownItalic', { italic = true })
+      vim.api.nvim_set_hl(0, 'MarkdownBold', { bold = true })

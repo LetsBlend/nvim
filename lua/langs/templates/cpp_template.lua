@@ -1,4 +1,6 @@
-return function(project_path)
+local M = {}
+
+function M.create_project(project_path)
   vim.fn.mkdir(project_path .. '/src', 'p')
   vim.fn.writefile({
     [[cmake_minimum_required(VERSION 3.10)]],
@@ -51,3 +53,22 @@ return function(project_path)
   vim.cmd('cd ' .. project_path)
   vim.cmd('e src/main.cpp')
 end
+
+function M.create_class(file_path, file_name)
+  print(file_path .. '   ' .. file_name)
+  -- Creates a class in the case of c++
+  vim.fn.writefile({
+    [[class ]] ..file_name .. [[ {]],
+    [[    public:]],
+    [[        ]] .. file_name .. [[() = default;]],
+    [[        ~]] .. file_name .. [[() = default;]],
+    [[};]],
+  }, file_path .. file_name .. '.h')
+
+  vim.fn.writefile({
+    [[#include "]] .. file_name .. [[.h"]],
+  }, file_path .. file_name .. '.cpp')
+
+end
+
+return M

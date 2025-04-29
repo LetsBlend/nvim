@@ -1,5 +1,8 @@
 local M = {}
 
+------------------------------------------------------------------------------
+--- C++ Build System
+------------------------------------------------------------------------------
 local function get_project_name()
   local cmake_lists = io.open('CMakeLists.txt', 'r')
   if not cmake_lists then
@@ -19,7 +22,7 @@ local function get_project_name()
   return nil
 end
 
-M.target_platform = 'Windows'
+M.target_platform = 'Linux'
 M.current_build_systems = 'cmake'
 M.build_systems = {
   direct = {
@@ -34,8 +37,12 @@ M.build_systems = {
   },
   cmake = {
     debug = {
-      configure = 'cmake -B build/' .. M.target_platform .. '/Debug -DCMAKE_BUILD_TYPE=Debug',
-      build = 'cmake --build build/' .. M.target_platform .. '/Debug && find build -type f -exec touch {} +',
+      configure = function ()
+        return 'cmake -B ./build/' .. M.target_platform .. '/Debug -DCMAKE_BUILD_TYPE=Debug'
+      end,
+      build = function ()
+        return 'cmake --build build/' .. M.target_platform .. '/Debug && find build -type f -exec touch {} +'
+      end,
       run = function()
         local path = './build/' .. M.target_platform .. '/Debug/' .. get_project_name()
         if M.target_platform == 'Windows' then
@@ -45,8 +52,12 @@ M.build_systems = {
       end,
     },
     release = {
-      configure = 'cmake -B build/' .. M.target_platform .. '/Release -DCMAKE_BUILD_TYPE=Release',
-      build = 'cmake --build build/' .. M.target_platform .. '/Release --config Release && find build -type f -exec touch {} +',
+      configure = function ()
+        return 'cmake -B build/' .. M.target_platform .. '/Release -DCMAKE_BUILD_TYPE=Release'
+      end,
+      build = function()
+        return 'cmake --build build/' .. M.target_platform .. '/Release --config Release && find build -type f -exec touch {} +'
+      end,
       run = function()
         local path = './build/' .. M.target_platform .. '/Release/' .. get_project_name()
         if M.target_platform == 'Windows' then
@@ -58,32 +69,10 @@ M.build_systems = {
   },
 }
 
--- TODO: Universaly store target_OS between sessions
--- (not super important to implement but would be nice i guess)
---
--- function M.save_data(data)
---   local file = file or vim.fn.stdpath("config") .. "/lua/lang/cpp.json"
---   local serialized = vim.json.encode(data)
---   vim.fn.writefile({serialized}, file)
--- end
---
--- function M.load_data(default_data)
---   local file = file or vim.fn.stdpath("config") .. "/lua/lang/cpp.json"
---   if vim.fn.filereadable(file) == 1 then
---     local data = vim.json.decode(vim.fn.readfile(file)[1])
---     return data
---   end
---   local serialzed = vim.json.encode(default_data)
---   vim.fn.writefile({serialzed}, file)
---   return default_data
--- end
-
 function M.cycle_target_platforms()
   if M.target_platform == 'Windows' then
     M.target_platform = 'Linux'
   elseif M.target_platform == 'Linux' then
-    M.target_platform = 'MacOS'
-  elseif M.target_platform == 'MacOS' then
     M.target_platform = 'Windows'
   end
 
@@ -97,6 +86,7 @@ local function expand_cmd(cmd)
   end
   return cmd:gsub('%%', vim.fn.expand '%'):gsub('%%<', vim.fn.expand '%:r')
 end
+
 
 -- Function to toggle between build systems
 function toggle_build_systems()
@@ -121,26 +111,102 @@ function M.configure(mode)
   vim.cmd('! ' .. expand_cmd(config.configure) .. ' -DTARGET_OS=' .. M.target_platform)
 end
 
+
+local app_term
 function M.build(mode)
-  local config = M.build_systems[M.current_build_systems][mode or 'debug']
-  if not config then
-    return
+  local Terminal = require("toggleterm.terminal").Terminal
+  if not app_term then
+    app_term = Terminal:new({
+      direction = "horizontal", -- Or "horizontal"/"vertical"
+      hidden = true,       -- Start hidden
+    })
+    app_term:open()
   end
-  M.configure(mode)
-  vim.cmd('! ' .. expand_cmd(config.build))
+
+  app_term:send('clear', false)
+  local config = M.build_systems[M.current_build_systems][mode or "debug"]
+  local cmd = expand_cmd(config.build) -- Your expanded run command (e.g., "./build/Debug/myapp")
+  app_term:send(config.build())
 end
 
 function M.run(mode)
-  local config = M.build_systems[M.current_build_systems][mode or 'debug']
-  if not config then
-    return
+  local Terminal = require("toggleterm.terminal").Terminal
+  if not app_term then
+    app_term = Terminal:new({
+      direction = "horizontal", -- Or "horizontal"/"vertical"
+      hidden = true,       -- Start hidden
+    })
+    app_term:open()
   end
-  vim.cmd('! ' .. expand_cmd(config.run))
+
+  app_term:send('clear', false)
+  local config = M.build_systems[M.current_build_systems][mode or "debug"]
+  local cmd = expand_cmd(config.run) -- Your expanded run command (e.g., "./build/Debug/myapp")
+  M.configure(mode)
+  app_term:send(config.run())
 end
 
 function M.build_and_run(mode)
   M.build(mode)
   M.run(mode)
+end
+
+------------------------------------------------------------------------------
+--- C++ Header/Source Switching
+------------------------------------------------------------------------------
+local headers = { ".h", ".hpp", ".hh" }
+local sources = { ".cpp", ".cc", ".cxx", ".c" }
+
+local function get_extension(filename)
+  return filename:match("^.+(%..+)$")
+end
+
+local function file_exists(path)
+  local f = io.open(path, "r")
+  if f then f:close() return true end
+  return false
+end
+
+function M.switch_header_source()
+  local current = vim.api.nvim_buf_get_name(0)
+  local dir = vim.fn.fnamemodify(current, ":h")
+  local name = vim.fn.fnamemodify(current, ":t:r")
+  local ext = get_extension(current)
+
+  local candidates = {}
+
+  if vim.tbl_contains(headers, ext) then
+    -- We're in a header → look for source
+    for _, s_ext in ipairs(sources) do
+      table.insert(candidates, dir .. "/" .. name .. s_ext)
+    end
+  elseif vim.tbl_contains(sources, ext) then
+    -- We're in a source → look for header
+    for _, h_ext in ipairs(headers) do
+      table.insert(candidates, dir .. "/" .. name .. h_ext)
+    end
+  else
+    vim.notify("Not a recognized C/C++ file", vim.log.levels.WARN)
+    return
+  end
+
+  for _, candidate in ipairs(candidates) do
+    if file_exists(candidate) then
+      vim.cmd("edit " .. vim.fn.fnameescape(candidate))
+      return
+    end
+  end
+
+  vim.notify("No corresponding header/source found.", vim.log.levels.WARN)
+end
+
+function M.keybinds()
+  -- TODO: Implement header and source syncing.
+  -- vim.keymap.set('n', '<leader>us', function() require('langs.cppsync').sync() end, { desc = "Sync header to source" })
+
+  vim.keymap.set("n", "<leader>h", function()
+    M.switch_header_source()
+  end, { desc = "[S]witch Header/Source" })
 end
 
 return M
