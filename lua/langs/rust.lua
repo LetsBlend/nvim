@@ -54,14 +54,14 @@ function M.build(mode)
   local Terminal = require("toggleterm.terminal").Terminal
   if not app_term then
     app_term = Terminal:new({
-      direction = "horizontal", -- Or "horizontal"/"vertical"
+      direction = "tab", -- Or "horizontal"/"vertical"
       hidden = true,       -- Start hidden
     })
-    app_term:open()
   end
 
   local config = M.build_systems[M.current_build_systems][mode or 'debug']
   -- Handle different platforms if needed
+  app_term:open()
   app_term:send('clear')
   app_term:send(config.build)
 end
@@ -70,14 +70,14 @@ function M.run(mode)
   local Terminal = require("toggleterm.terminal").Terminal
   if not app_term then
     app_term = Terminal:new({
-      direction = "horizontal", -- Or "horizontal"/"vertical"
+      direction = "tab", -- Or "horizontal"/"vertical"
       hidden = true,       -- Start hidden
     })
-    app_term:open()
   end
 
   local config = M.build_systems[M.current_build_systems][mode or 'debug']
   -- Handle different platforms if needed
+  app_term:open()
   app_term:send('clear')
   app_term:send(config.run)
 end

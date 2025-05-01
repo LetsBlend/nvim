@@ -1,10 +1,7 @@
 -- FIXME: 
--- Make find projects option sort projects into languages
--- Make a undo hirarchy
--- Make functions/comments/etc. collapsable
--- Fix building c++ for Linux
 -- 
 -- TODO: 
+-- Make find projects option sort projects into languages
 -- Add support for a C++ Windows debugger
 -- Add Autoformatting for c++
 -- Make rename also work when renaming function definitions in c++
@@ -96,11 +93,10 @@ vim.opt.shiftwidth = 4
 vim.opt.softtabstop = 4
 vim.opt.expandtab = true
 
--- Collapsable code sections
-vim.o.foldmethod = "syntax"    -- or "indent", "manual", "expr"
-vim.o.foldenable = true
-vim.o.foldlevel = 99
-vim.o.foldnestmax = 10
+vim.opt.undofile = true
+vim.opt.undodir = vim.fn.stdpath("config") .. "/undodir"
+
+vim.opt.termguicolors = true
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()
@@ -108,7 +104,7 @@ vim.keymap.set('n', '<C-d>', '<C-d>zz')
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
 
 -- For indentation
-vim.keymap.set('n', '<leader>u', '[U]til')
+vim.keymap.set("n", "p", '"+p`[V`]=', { desc = "Paste and auto-indent" })
 vim.keymap.set('n', '<leader>i', 'gg=G<C-o>', { desc = 'Indent file' })
 vim.keymap.set('i', '<S-Tab>', '<C-d>', { desc = 'Outdent line' })
 vim.keymap.set('n', '<leader>uw', '<cmd>set shiftwidth=4<CR>', { desc = 'Set shiftwidth to default' })
@@ -133,6 +129,8 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+vim.keymap.set("x", "p", [["_dP]], { desc = "Paste without overwriting register" })
+
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -231,261 +229,322 @@ require('lazy').setup({
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
-    --        'lewis6991/gitsigns.nvim',
-    --        config = function()
-      --            require('gitsigns').setup({
-        --                -- Your gitsigns configuration here
-        --            })
-        --        end,
-        --    }
-        --
-        -- Here is a more advanced example where we pass configuration
-        -- options to `gitsigns.nvim`.
-        --
-        -- See `:help gitsigns` to understand what the configuration keys do
-        { -- Adds git related signs to the gutter, as well as utilities for managing changes
-          'lewis6991/gitsigns.nvim',
-          opts = {
-            signs = {
-              add = { text = '+' },
-              change = { text = '~' },
-              delete = { text = '_' },
-              topdelete = { text = '‾' },
-              changedelete = { text = '~' },
-            },
-          },
-        },
+  --        'lewis6991/gitsigns.nvim',
+  --        config = function()
+  --            require('gitsigns').setup({
+  --                -- Your gitsigns configuration here
+  --            })
+  --        end,
+  --    }
+  --
+  -- Here is a more advanced example where we pass configuration
+  -- options to `gitsigns.nvim`.
+  --
+  -- See `:help gitsigns` to understand what the configuration keys do
+  { -- Adds git related signs to the gutter, as well as utilities for managing changes
+    'lewis6991/gitsigns.nvim',
+    opts = {
+      signs = {
+        add = { text = '+' },
+        change = { text = '~' },
+        delete = { text = '_' },
+        topdelete = { text = '‾' },
+        changedelete = { text = '~' },
+      },
+    },
+  },
 
-        -- Session manager Plugin
-        {
-          "folke/persistence.nvim",
-          event = "BufReadPre", -- lazy-load on file open
-          config = function()
-            require("persistence").setup()
-          end,
-        },
+  -- Session manager Plugin
+  {
+    "folke/persistence.nvim",
+    event = "BufReadPre", -- lazy-load on file open
+    config = function()
+      require("persistence").setup()
+    end,
+  },
 
 
-        -- Alpha Nvim Plugin
-        require 'plugins.alphanvim',
+  -- Alpha Nvim Plugin
+  require 'plugins.alphanvim',
 
-        -- WhichKey Plugin
-        require 'plugins.whichkey',
+  -- WhichKey Plugin
+  require 'plugins.whichkey',
 
-        -- Terminal Plugin
-        require 'plugins.toggleterm',
+  -- Terminal Plugin
+  require 'plugins.toggleterm',
 
-        -- Telescope Fuzzy Finder Plugin
-        require 'plugins.telescope',
+  -- Telescope Fuzzy Finder Plugin
+  require 'plugins.telescope',
 
-        -- Projects Plugin
-        {
-          "ahmedkhalf/project.nvim",
-          config = function()
-            require("project_nvim").setup({
-              -- these are the defaults, customize if needed
-              detection_methods = { "lsp", "pattern" },
-              patterns = {
-                ".git",                 -- Git repos
-                "Makefile",             -- C / C++ / general builds
-                "CMakeLists.txt",       -- C / C++ with CMake
-                "package.json",         -- Node.js / npm
-                "requirements.txt",     -- Python (pip)
-                "pyproject.toml",       -- Python (modern packaging)
-                "setup.py",             -- Python (legacy packaging)
-                "Pipfile",              -- Python (pipenv)
-                "poetry.lock",          -- Python (poetry)
-                "Cargo.toml",           -- Rust
-                "go.mod",               -- Go
-                "go.sum",               -- Go
-                "composer.json",        -- PHP (Composer)
-                "Gemfile",              -- Ruby (Bundler)
-                "mix.exs",              -- Elixir (Mix)
-                "build.gradle",         -- Java / Kotlin (Gradle)
-                "pom.xml",              -- Java (Maven)
-                ".project",             -- Custom fallback marker
-                "tsconfig.json",        -- TypeScript
-                "deno.json",            -- Deno
-                "elm.json",             -- Elm
-                "shard.yml",            -- Crystal
-                "Justfile",             -- just task runner
-                ".env",                 -- Often present in projects
-                ".project",            -- Custom marker 
-              },
-            })
-          end,
-        },
-
-        -- LSP Plugins
-        require 'plugins.lsp',
-
-        -- LSP UI
-        {
-          "ellisonleao/glow.nvim", 
-          config = true, 
-          cmd = "Glow",
-          opts = {
-            style = 'dark',   -- Try other styles like 'dark', 'light', or 'solarized'
-            border = 'rounded',  -- Options: 'single', 'double', 'rounded', 'solid'
-            width = 100,  -- Set the width of the window
-            height = 30,  -- Set the height of the window
-            max_width = 120,  -- Set maximum width
-            max_height = 40,  -- Set maximum height
-          }
-        },
-
-        -- Autoforma Plugins
-        -- require 'plugins.autoformat',
-
-        -- Autocompletion Plugins
-        require 'plugins.autocomplete',
-
-        -- Autopairs Plugin
-        require 'plugins.autopairs',
-
-        -- Tree-Hirarchy plugin
-        require 'plugins.neo-tree',
-
-        -- Highlighting and Colorscemes
-        require 'plugins.highlighter',
-
-        {
-          "kevinhwang91/nvim-ufo",
-          dependencies = { "kevinhwang91/promise-async" },
-          config = function()
-            -- Global fold settings
-            vim.o.foldcolumn = "1" -- Show fold column
-            vim.o.foldlevel = 99
-            vim.o.foldlevelstart = 99
-            vim.o.foldenable = true
-
-            -- Folding providers: Treesitter + fallback to indent
-            require("ufo").setup({
-              provider_selector = function(_, filetype, _)
-                return { "treesitter", "indent" }
-              end,
-            })
-          end,
-        },
-
-        {
-          "nvim-treesitter/nvim-treesitter",
-          build = ":TSUpdate",
-          config = function()
-            require("nvim-treesitter.configs").setup({
-              ensure_installed = {
-                "lua", "python", "javascript", "typescript", "json", "html", "css", "cpp", "c", "java", "rust", -- add more as needed
-              },
-              highlight = {
-                enable = true,
-              },
-              indent = {
-                enable = true,
-              },
-            })
-
-            -- Set folding options
-            vim.opt.foldmethod = "expr"
-            vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
-            vim.opt.foldenable = true      -- Enable folding by default
-            vim.opt.foldlevel = 99         -- Open all folds by default
-          end,
-        },
-
-        { -- Collection of various small independent plugins/modules
-          'echasnovski/mini.nvim',
-          config = function()
-            -- Better Around/Inside textobjects
-            --
-            -- Examples:
-            --  - va)  - [V]isually select [A]round [)]paren
-            --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
-            --  - ci'  - [C]hange [I]nside [']quote
-            require('mini.ai').setup { n_lines = 500 }
-
-            -- Add/delete/replace surroundings (brackets, quotes, etc.)
-            --
-            -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-            -- - sd'   - [S]urround [D]elete [']quotes
-            -- - sr)'  - [S]urround [R]eplace [)] [']
-            require('mini.surround').setup()
-
-            -- Simple and easy statusline.
-            --  You could remove this setup call if you don't like it,
-            --  and try some other statusline plugin
-            local statusline = require 'mini.statusline'
-            -- set use_icons to true if you have a Nerd Font
-            statusline.setup { use_icons = vim.g.have_nerd_font }
-
-            -- You can configure sections in the statusline by overriding their
-            -- default behavior. For example, here we set the section for
-            -- cursor location to LINE:COLUMN
-            ---@diagnostic disable-next-line: duplicate-set-field
-            statusline.section_location = function()
-              return '%2l:%-2v'
-            end
-
-            -- ... and there is more!
-            --  Check out: https://github.com/echasnovski/mini.nvim
-          end,
-        },
-
-        -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
-        -- init.lua. If you want these files, they are in the repository, so you can just download them and
-        -- place them in the correct locations.
-
-        -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-        --
-        --  Here are some example plugins that I've included in the Kickstart repository.
-        --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-        --
-        -- tried to setup debugging for windows applications in cplusplus but failed (sadge)
-        -- you can expect quite a bit of work future me
-        require 'plugins.debug',
-        -- require 'plugins.indent_line',
-        -- require 'plugins.lint',
-        require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
-
-        -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-        --    This is the easiest way to modularize your config.
-        --
-        --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-        -- { import = 'custom.plugins' },
-        --
-        -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
-        -- Or use telescope!
-        -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
-        -- you can continue same window with `<space>sr` which resumes last telescope search
-      }, {
-        ui = {
-          -- If you are using a Nerd Font: set icons to an empty table which will use the
-          -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-          icons = vim.g.have_nerd_font and {} or {
-            cmd = '⌘',
-            config = '🛠',
-            event = '📅',
-            ft = '📂',
-            init = '⚙',
-            keys = '🗝',
-            plugin = '🔌',
-            runtime = '💻',
-            require = '🌙',
-            source = '📄',
-            start = '🚀',
-            task = '📌',
-            lazy = '💤 ',
-          },
+  -- Projects Plugin
+  {
+    "ahmedkhalf/project.nvim",
+    config = function()
+      require("project_nvim").setup({
+        -- these are the defaults, customize if needed
+        detection_methods = { "lsp", "pattern" },
+        patterns = {
+          ".git",                 -- Git repos
+          "Makefile",             -- C / C++ / general builds
+          "CMakeLists.txt",       -- C / C++ with CMake
+          "package.json",         -- Node.js / npm
+          "requirements.txt",     -- Python (pip)
+          "pyproject.toml",       -- Python (modern packaging)
+          "setup.py",             -- Python (legacy packaging)
+          "Pipfile",              -- Python (pipenv)
+          "poetry.lock",          -- Python (poetry)
+          "Cargo.toml",           -- Rust
+          "go.mod",               -- Go
+          "go.sum",               -- Go
+          "composer.json",        -- PHP (Composer)
+          "Gemfile",              -- Ruby (Bundler)
+          "mix.exs",              -- Elixir (Mix)
+          "build.gradle",         -- Java / Kotlin (Gradle)
+          "pom.xml",              -- Java (Maven)
+          ".project",             -- Custom fallback marker
+          "tsconfig.json",        -- TypeScript
+          "deno.json",            -- Deno
+          "elm.json",             -- Elm
+          "shard.yml",            -- Crystal
+          "Justfile",             -- just task runner
+          ".env",                 -- Often present in projects
+          ".project",            -- Custom marker 
         },
       })
+    end,
+  },
 
-      require('alpha').start()
+  -- LSP Plugins
+  require 'plugins.lsp',
 
-      -- The line beneath this is called `modeline`. See `:help modeline`
-      -- vim: ts=2 sts=2 sw=2 et
-      ---- Add to your noice.nvim config or init.lua
-      vim.api.nvim_set_hl(0, 'MarkdownH1', { bold = true, fg = '#ff9e64' })
-      vim.api.nvim_set_hl(0, 'MarkdownH2', { bold = true, fg = '#7aa2f7' })
-      vim.api.nvim_set_hl(0, 'MarkdownCode', { bg = '#1a1a2e' })
-      vim.api.nvim_set_hl(0, 'MarkdownLinkText', { underline = true, fg = '#7dcfff' })
-      vim.api.nvim_set_hl(0, 'MarkdownItalic', { italic = true })
-      vim.api.nvim_set_hl(0, 'MarkdownBold', { bold = true })
+  -- LSP UI
+  {
+    "ellisonleao/glow.nvim",
+    config = true,
+    cmd = "Glow",
+    opts = {
+      style = 'dark',   -- Try other styles like 'dark', 'light', or 'solarized'
+      border = 'rounded',  -- Options: 'single', 'double', 'rounded', 'solid'
+      width = 100,  -- Set the width of the window
+      height = 30,  -- Set the height of the window
+      max_width = 120,  -- Set maximum width
+      max_height = 40,  -- Set maximum height
+    }
+  },
+
+  -- Autoforma Plugins
+  -- require 'plugins.autoformat',
+
+  -- Autocompletion Plugins
+  require 'plugins.autocomplete',
+
+  -- Autopairs Plugin
+  require 'plugins.autopairs',
+
+  -- Tree-Hirarchy plugin
+  require 'plugins.neo-tree',
+
+  -- Harpoon Plugin
+  require 'plugins.harpoon',
+
+  -- Highlighting and Colorscemes
+  require 'plugins.highlighter',
+
+  -- UndoTree Plugin
+  {
+    "mbbill/undotree",
+    cmd = "UndotreeToggle", -- lazy-load on command
+    keys = {
+      { "<leader>ut", "<cmd>UndotreeToggle<cr>", desc = "[U]ndo[T]ree" }
+    },
+    config = function()
+      vim.g.undotree_WindowLayout = 2 -- Optional: vertical split
+      vim.g.undotree_SetFocusWhenToggle = 1
+    end,
+  },
+
+  -- Fold Plugin
+  {
+    "kevinhwang91/nvim-ufo",
+    dependencies = { "kevinhwang91/promise-async" },
+    config = function()
+      -- Global fold settings
+      vim.o.foldcolumn = "1" -- Show fold column
+      vim.o.foldlevel = 99
+      vim.o.foldlevelstart = 99
+      vim.o.foldenable = true
+      -- Folding providers: Treesitter + fallback to indent
+      require("ufo").setup({
+        provider_selector = function(_, filetype, _)
+          return { "treesitter", "indent" }
+        end,
+        preview = {
+          winhighlight = "FloatBorder:WinSeparator",  -- Match border to window separator
+          border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },  -- Optional: Custom border
+        }
+      })
+    end,
+  },
+
+  -- Treesitter Plugin
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    config = function()
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = {
+          "lua", "python", "javascript", "typescript", "json", "html", "css", "cpp", "c", "java", "rust", -- add more as needed
+        },
+        highlight = {
+          enable = true,
+        },
+        indent = {
+          enable = true,
+        },
+      })
+    end,
+  },
+
+  {
+    "nvim-treesitter/nvim-treesitter-context",
+    config = function()
+      require("treesitter-context").setup({
+        enable = true,            -- Enable this plugin (Can be enabled/disabled later via commands)
+        max_lines = 3,            -- How many lines the context window should span
+        trim_scope = 'outer',     -- Which context lines to discard if `max_lines` is exceeded
+        mode = 'cursor',          -- Line used to calculate context (cursor or topline)
+        separator = nil,          -- Separator between context and content (can be a string like "─")
+      })
+    end,
+  },
+
+  { -- Collection of various small independent plugins/modules
+    'echasnovski/mini.nvim',
+    config = function()
+      -- Better Around/Inside textobjects
+      --
+      -- Examples:
+      --  - va)  - [V]isually select [A]round [)]paren
+      --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
+      --  - ci'  - [C]hange [I]nside [']quote
+      require('mini.ai').setup { n_lines = 500 }
+
+      -- Add/delete/replace surroundings (brackets, quotes, etc.)
+      --
+      -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
+      -- - sd'   - [S]urround [D]elete [']quotes
+      -- - sr)'  - [S]urround [R]eplace [)] [']
+      require('mini.surround').setup()
+
+      -- Simple and easy statusline.
+      --  You could remove this setup call if you don't like it,
+      --  and try some other statusline plugin
+      local statusline = require 'mini.statusline'
+      -- set use_icons to true if you have a Nerd Font
+      statusline.setup { use_icons = vim.g.have_nerd_font }
+
+      -- You can configure sections in the statusline by overriding their
+      -- default behavior. For example, here we set the section for
+      -- cursor location to LINE:COLUMN
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_location = function()
+        return '%2l:%-2v'
+      end
+
+      -- ... and there is more!
+      --  Check out: https://github.com/echasnovski/mini.nvim
+    end,
+  },
+
+  -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
+  -- init.lua. If you want these files, they are in the repository, so you can just download them and
+  -- place them in the correct locations.
+
+  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
+  --
+  --  Here are some example plugins that I've included in the Kickstart repository.
+  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
+  --
+  -- tried to setup debugging for windows applications in cplusplus but failed (sadge)
+  -- you can expect quite a bit of work future me
+  require 'plugins.debug',
+
+  -- require 'plugins.indent_line',
+  -- require 'plugins.lint',
+  require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
+
+  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
+  --    This is the easiest way to modularize your config.
+  --
+  --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
+  -- { import = 'custom.plugins' },
+  --
+  -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
+  -- Or use telescope!
+  -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
+  -- you can continue same window with `<space>sr` which resumes last telescope search
+}, {
+    ui = {
+      -- If you are using a Nerd Font: set icons to an empty table which will use the
+      -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
+      icons = vim.g.have_nerd_font and {} or {
+        cmd = '⌘',
+        config = '🛠',
+        event = '📅',
+        ft = '📂',
+        init = '⚙',
+        keys = '🗝',
+        plugin = '🔌',
+        runtime = '💻',
+        require = '🌙',
+        source = '📄',
+        start = '🚀',
+        task = '📌',
+        lazy = '💤 ',
+      },
+    },
+  })
+
+require('alpha').start()
+
+-- The line beneath this is called `modeline`. See `:help modeline`
+-- vim: ts=2 sts=2 sw=2 et
+---- Add to your noice.nvim config or init.lua
+vim.api.nvim_set_hl(0, 'MarkdownH1', { bold = true, fg = '#ff9e64' })
+vim.api.nvim_set_hl(0, 'MarkdownH2', { bold = true, fg = '#7aa2f7' })
+vim.api.nvim_set_hl(0, 'MarkdownCode', { bg = '#1a1a2e' })
+vim.api.nvim_set_hl(0, 'MarkdownLinkText', { underline = true, fg = '#7dcfff' })
+vim.api.nvim_set_hl(0, 'MarkdownItalic', { italic = true })
+vim.api.nvim_set_hl(0, 'MarkdownBold', { bold = true })
+
+-- Window Seperation
+vim.wo.winhighlight = "WinSeparator:WinSeparator"
+vim.opt.fillchars = {
+  horiz = "─",
+  horizup = "┴",
+  horizdown = "┬",
+  vert = "│",
+  vertleft = "┤",
+  vertright = "├",
+  verthoriz = "┼",
+}
+vim.opt.laststatus = 3 -- Global statusline for cleaner separation
+vim.api.nvim_set_hl(0, 'WinSeparator', { fg = '#00a5be', bg = 'NONE' })
+
+-- Make relative numbers more visible
+vim.api.nvim_set_hl(0, "TreesitterContextLineNumber", { fg = "#7a8ba8" })  -- Makes the line number color the same as Normal text
+vim.api.nvim_set_hl(0, 'LineNrAbove', { fg = "#565f89" })
+vim.api.nvim_set_hl(0, 'LineNrBelow', { fg = "#565f89"})
+
+
+-- Snippets
+local ls = require("luasnip")
+
+vim.keymap.set({ "i", "s", "n" }, "<C-k>", function()
+  if ls.expand_or_jumpable() then ls.expand_or_jump() end
+end, { silent = true })
+
+vim.keymap.set({ "i", "s", "n" }, "<C-j>", function()
+  if ls.jumpable(-1) then ls.jump(-1) end
+end, { silent = true })
+

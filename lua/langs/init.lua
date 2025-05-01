@@ -21,7 +21,6 @@ return {
             language.cycle_target_platforms()
           end, {buffer = bufnr, desc = '[T]oggle target [O]perating Systems'})
 
-          vim.keymap.set('n', '<leader>b', '[B]uild')
           vim.keymap.set('n', '<leader>bd', function()
             language.build('debug')
           end, { buffer = bufnr, desc = '[B]uild [D]ebug' })
@@ -30,7 +29,6 @@ return {
             language.build('release')
           end, { buffer = bufnr, desc = '[B]uild [R]elease' })
 
-          vim.keymap.set('n', '<leader>r', '[R]un')
           vim.keymap.set('n', '<leader>rd', function()
             language.run('debug')
           end, { buffer = bufnr, desc = '[R]un [D]ebug' })
@@ -39,7 +37,6 @@ return {
             language.run('release')
           end, { buffer = bufnr, desc = '[R]un [R]elease' })
 
-          vim.keymap.set('n', '<leader>a', '[B]uild and [R]un')
           vim.keymap.set('n', '<leader>ad', function()
             language.build_and_run('debug')
           end, { buffer = bufnr, desc = '[B]uild & [R]un [D]ebug' })
