@@ -67,6 +67,7 @@ return {
         { '<leader>r', group = '[R]un'},
         { '<leader>a', group = '[B]uild & [R]un'},
         { '<leader>u', group = '[U]til'},
+        { '<leader>c', group = '[C]rates'},
       },
     },
   },

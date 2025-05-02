@@ -9,7 +9,7 @@ local conf = require('telescope.config').values
 
 local templates = {
   cpp = require 'langs.templates.cpp_template',
-  rust = '',
+  rust = require 'langs.templates.rust_template',
   java = require 'langs.templates.java_template',
   csharp = '',
   lua = '',
@@ -19,8 +19,8 @@ local language_dirs = {
   cpp = '/mnt/c/dev/CPlusPlus/',
   rust = '/mnt/c/dev/Rust/',
   java = '/mnt/c/dev/Java/',
-  csharp = '/mnt/c/dev/CSharp/',
-  lua = '/mnt/c/dev/Lua/',
+  -- csharp = '/mnt/c/dev/CSharp/',
+  -- lua = '/mnt/c/dev/Lua/',
 }
 
 function M.get_lsp_root()
@@ -49,7 +49,7 @@ function M.get_project_language()
       return name
     end
   end
-  return "unknown"
+  return ""
 end
 
 print("LSP Language: " .. M.get_project_language())

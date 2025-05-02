@@ -1,4 +1,5 @@
 -- FIXME: 
+-- :)
 -- 
 -- TODO: 
 -- Make find projects option sort projects into languages
@@ -104,7 +105,7 @@ vim.keymap.set('n', '<C-d>', '<C-d>zz')
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
 
 -- For indentation
-vim.keymap.set("n", "p", '"+p`[V`]=', { desc = "Paste and auto-indent" })
+vim.keymap.set('n', 'p', '"+p`[V`]=', { desc = 'Paste and auto-indent' })
 vim.keymap.set('n', '<leader>i', 'gg=G<C-o>', { desc = 'Indent file' })
 vim.keymap.set('i', '<S-Tab>', '<C-d>', { desc = 'Outdent line' })
 vim.keymap.set('n', '<leader>uw', '<cmd>set shiftwidth=4<CR>', { desc = 'Set shiftwidth to default' })
@@ -113,7 +114,7 @@ vim.keymap.set('n', '<leader>uw', '<cmd>set shiftwidth=4<CR>', { desc = 'Set shi
 vim.keymap.set('n', '<leader>ur', ':ProjectRoot<CR>', { desc = 'Set Project Root' })
 
 
-vim.keymap.set("n", "K", require("plugins.hover_docs").hover_to_glow, { desc = "LSP Hover with Glow" })
+vim.keymap.set('n', 'K', require('plugins.hover_docs').hover_to_glow, { desc = 'LSP Hover with Glow' })
 
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
@@ -129,7 +130,11 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-vim.keymap.set("x", "p", [["_dP]], { desc = "Paste without overwriting register" })
+vim.keymap.set('x', 'p', '"_dP', { desc = 'Paste without overwriting register' })
+
+-- Prevents { from littering the jump list
+vim.keymap.set('n', '{', function() vim.cmd('keepjumps normal! {') end, { silent = true })
+vim.keymap.set('n', '}', function() vim.cmd('keepjumps normal! }') end, { silent = true })
 
 
 -- TIP: Disable arrow keys in normal mode
@@ -263,7 +268,6 @@ require('lazy').setup({
     end,
   },
 
-
   -- Alpha Nvim Plugin
   require 'plugins.alphanvim',
 
@@ -386,7 +390,6 @@ require('lazy').setup({
     end,
   },
 
-  -- Treesitter Plugin
   {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
@@ -473,6 +476,25 @@ require('lazy').setup({
   -- require 'plugins.lint',
   require 'plugins.gitsigns', -- adds gitsigns recommend keymaps
 
+  -- Tokyonight
+  {
+    "folke/tokyonight.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {
+      style = "night", 
+      transparent = false,
+      styles = {
+        sidebars = "transparent",
+        floats = "transparent",
+      },
+    },
+    config = function(_, opts)
+      require("tokyonight").setup(opts)
+      vim.cmd.colorscheme("tokyonight")
+    end,
+  },
+
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
   --
@@ -510,12 +532,12 @@ require('alpha').start()
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 ---- Add to your noice.nvim config or init.lua
-vim.api.nvim_set_hl(0, 'MarkdownH1', { bold = true, fg = '#ff9e64' })
-vim.api.nvim_set_hl(0, 'MarkdownH2', { bold = true, fg = '#7aa2f7' })
-vim.api.nvim_set_hl(0, 'MarkdownCode', { bg = '#1a1a2e' })
-vim.api.nvim_set_hl(0, 'MarkdownLinkText', { underline = true, fg = '#7dcfff' })
-vim.api.nvim_set_hl(0, 'MarkdownItalic', { italic = true })
-vim.api.nvim_set_hl(0, 'MarkdownBold', { bold = true })
+-- vim.api.nvim_set_hl(0, 'MarkdownH1', { bold = true, fg = '#ff9e64' })
+-- vim.api.nvim_set_hl(0, 'MarkdownH2', { bold = true, fg = '#7aa2f7' })
+-- vim.api.nvim_set_hl(0, 'MarkdownCode', { bg = '#1a1a2e' })
+-- vim.api.nvim_set_hl(0, 'MarkdownLinkText', { underline = true, fg = '#7dcfff' })
+-- vim.api.nvim_set_hl(0, 'MarkdownItalic', { italic = true })
+-- vim.api.nvim_set_hl(0, 'MarkdownBold', { bold = true })
 
 -- Window Seperation
 vim.wo.winhighlight = "WinSeparator:WinSeparator"
@@ -547,4 +569,7 @@ end, { silent = true })
 vim.keymap.set({ "i", "s", "n" }, "<C-j>", function()
   if ls.jumpable(-1) then ls.jump(-1) end
 end, { silent = true })
+
+
+
 

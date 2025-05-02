@@ -22,6 +22,7 @@ return {
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
+
       -- Java specific plugins
       'nvim-java/nvim-java',
       'nvim-java/lua-async-await',
@@ -33,7 +34,9 @@ return {
       { 'j-hui/fidget.nvim', opts = {} },
 
       -- Allows extra capabilities provided by blink.cmp
-      'saghen/blink.cmp',
+      -- 'saghen/blink.cmp',
+      { require 'plugins.cmp' },
+
     },
     config = function()
       -- Brief aside: **What is LSP?**
@@ -175,7 +178,7 @@ return {
         end,
       })
 
-      -- Diagnostic Config
+
       -- See :help vim.diagnostic.Opts
       vim.diagnostic.config {
         severity_sort = true,
@@ -208,7 +211,8 @@ return {
       -- By default, Neovim doesn't support everything that is in the LSP specification.
       -- When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
       --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
-      local capabilities = require('blink.cmp').get_lsp_capabilities()
+      -- local capabilities = require('blink.cmp').get_lsp_capabilities()
+      local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
