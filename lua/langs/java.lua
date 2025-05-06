@@ -35,23 +35,14 @@ function M.build(mode)
   require('java').build.build_workspace()
 end
 
-local app_term
-
 function M.run(mode)
-  local Terminal = require("toggleterm.terminal").Terminal
-
-  if not app_term then
-    app_term = Terminal:new({
-      direction = "horizontal",
-      hidden = true,
-    })
-  app_term:open()
-  end
+  local toggleterm = require 'toggle_term'
 
   -- Now send the new command into the terminal
-  app_term:send("clear", false)
+  toggleterm.open()
+  toggleterm.send("clear", false)
   local cmd = "./gradlew run"
-  app_term:send(cmd, true) -- the 'true' means send <CR> after
+  toggleterm.send(cmd, true) -- the 'true' means send <CR> after
 end
 
 function M.build_and_run(mode)
